@@ -1,28 +1,121 @@
 #include <stdio.h>
-#include "freertos/FreeRTOS.h"
+#include "../components/led_strip/src/led_strip_rmt_ws2812.c"
+#include "../components/blocking_delay/blocking_delay.c"
+#include "../components/led_control/include/led_control.c"
 #include "driver/touch_pad.h"
-#include "esp_log.h"
 
+led_strip_t *strip;
 
-void app_main(void)
+int intensidad = 0;
+
+void handle_touch_up() {
+    if (intensidad < 100) {
+        intensidad += 10 ;
+    }
+    printf("intensidad: %d\n", intensidad);
+    printf("No mE toQuEs!!\n");
+    encender_led_custom(strip, 0, 2.55 * intensidad, 0, 0);
+
+}
+
+void handle_touch_down() {
+    if (intensidad >= 10) {
+        intensidad -= 10;
+    }
+    printf("intensidad: %d\n", intensidad);
+    printf("No mE toQuEs!!\n");
+    encender_led_custom(strip, 0, 2.55 * intensidad, 0, 0);
+
+}
+
+int app_main(void)
 {
-    /* Initialize touch pad peripheral. */
+    // Inicializar el LED
+      if (led_rgb_init(&strip) != ESP_OK) {
+          printf("Error al inicializar la tira de LED\n"); // Si hay error se imprime por pantalla
+          return -1;
+      }
+
+    // Inicializar el touch pad
     touch_pad_init();
-    touch_pad_config(TOUCH_PAD_NUM6);
+    // Configurar los botones a utilizar
+    touch_pad_config(TOUCH_PAD_NUM1);
+    touch_pad_config(TOUCH_PAD_NUM3);
+    // Setear modo de funcionamiento
     touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
     touch_pad_fsm_start();
 
- uint32_t touch_value;
+    uint32_t up_value;
+    uint32_t down_value;
+  
+    delay_ms(100);
 
-    /* Wait touch sensor init done */
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-    printf("Touch Sensor read, the output format is: \nTouchpad num:[raw data]\n\n");
-
+    // Leer el valor del touch pad cada x milisegundos
     while (1) {
-        touch_pad_read_raw_data(TOUCH_PAD_NUM6, &touch_value);    // read raw data.
-        printf("T%d: [%4lu] ", TOUCH_PAD_NUM6, touch_value);
-        
-        printf("\n");
-        vTaskDelay(200 / portTICK_PERIOD_MS);
+        touch_pad_read_raw_data(TOUCH_PAD_NUM1, &up_value);
+        printf("Up: [%4lu] \n",  up_value);
+        touch_pad_read_raw_data(TOUCH_PAD_NUM3, &down_value);
+        printf("Down: [%4lu] \n",  down_value);
+
+        if (up_value > 52000) {
+            handle_touch_up();
+        }
+        if (down_value > 52000) {
+            handle_touch_down();
+        }
+
+        delay_ms(200);
     }
+
+    // Limpiar antes de salir
+    strip->clear(strip, 100);
+    strip->del(strip);
+    return 0;
 }
+
+
+// void app_main(void)
+// {
+//     // Inicializar el touch pad
+//     touch_pad_init();
+//     // Configurar los botones a utilizar
+//     touch_pad_config(TOUCH_PAD_NUM6);
+//     // Setear modo de funcionamiento
+//     touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
+//     touch_pad_fsm_start();
+//
+//     uint32_t touch_value;
+//     uint32_t smooth_value;
+//
+//     touch_pad_read_raw_data(TOUCH_PAD_NUM6, &touch_value);
+//     touch_pad_set_thresh(TOUCH_PAD_NUM6, touch_value * 0.7);
+//    
+//
+//     // Set touch pad configuration.
+//     touch_filter_config_t filter_config = {
+//         .mode = TOUCH_PAD_FILTER_IIR_64, // You can choose the filter mode as per your requirement.
+//         .debounce_cnt = 1,              // Set the debounce count.
+//         .noise_thr = 50,                // Set the noise threshold.
+//         .jitter_step = 4                // Set the jitter step.
+//     };
+//
+//
+//     touch_pad_filter_set_config(&filter_config);
+//   touch_pad_filter_enable();
+//     // touch_pad_filter_start(10);
+//
+//     delay_ms(100);
+//
+//     // Leer el valor del touch pad cada x milisegundos
+//     while (1) {
+//         touch_pad_read_raw_data(TOUCH_PAD_NUM6, &touch_value);
+//         touch_pad_filter_read_smooth(TOUCH_PAD_NUM6, &smooth_value);
+//
+//         printf("Raw: [%4lu] ",  touch_value);
+//         printf("Smooth: [%4lu] \n",  smooth_value);
+//         delay_ms(200);
+//     }
+// }
+//
+
+
