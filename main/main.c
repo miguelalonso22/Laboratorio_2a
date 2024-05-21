@@ -13,7 +13,6 @@ void handle_touch_up() {
         intensidad += 10 ;
     }
     printf("intensidad: %d\n", intensidad);
-    printf("No mE toQuEs!!\n");
     encender_led_custom(strip, 0, 2.55 * intensidad, 0, 0);
 
 }
@@ -23,7 +22,6 @@ void handle_touch_down() {
         intensidad -= 10;
     }
     printf("intensidad: %d\n", intensidad);
-    printf("No mE toQuEs!!\n");
     encender_led_custom(strip, 0, 2.55 * intensidad, 0, 0);
 
 }
@@ -47,15 +45,15 @@ int app_main(void)
 
     uint32_t up_value;
     uint32_t down_value;
-  
+
     delay_ms(100);
 
     // Leer el valor del touch pad cada x milisegundos
     while (1) {
         touch_pad_read_raw_data(TOUCH_PAD_NUM1, &up_value);
-        printf("Up: [%4lu] \n",  up_value);
+        // printf("Up: [%lu] \n",  up_value);
         touch_pad_read_raw_data(TOUCH_PAD_NUM3, &down_value);
-        printf("Down: [%4lu] \n",  down_value);
+        // printf("Down: [%lu] \n",  down_value);
 
         if (up_value > 52000) {
             handle_touch_up();
